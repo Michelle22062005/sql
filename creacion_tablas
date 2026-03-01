@@ -1,0 +1,222 @@
+# 📦 Crudzaso Delivery Ops (CDO)
+
+## Documentación Base de Datos - delivery_ops
+
+------------------------------------------------------------------------
+
+## 🔹 1. Creación de Base de Datos
+
+``` sql
+CREATE DATABASE delivery_ops;
+USE delivery_ops;
+```
+
+Se crea la base de datos principal del sistema y se selecciona para
+trabajar sobre ella.
+
+------------------------------------------------------------------------
+
+# 🔹 2. Definición de Tablas (DDL)
+
+## 📌 Tabla: customers
+
+``` sql
+CREATE TABLE customers(
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Descripción:**\
+Almacena la información de los clientes que realizan pedidos.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: sellers
+
+``` sql
+CREATE TABLE sellers(
+    seller_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Descripción:**\
+Representa los vendedores o partners del marketplace.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: categories
+
+``` sql
+CREATE TABLE categories(
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description VARCHAR(200) NOT NULL
+);
+```
+
+**Descripción:**\
+Clasificación de productos dentro del sistema.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: products
+
+``` sql
+CREATE TABLE products(
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description VARCHAR(200) NOT NULL,
+    price INT NOT NULL,
+    is_active BOOLEAN NOT NULL,
+    seller_id INT NOT NULL,
+    category_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_product_seller
+        FOREIGN KEY (seller_id)
+        REFERENCES sellers(seller_id) ON DELETE CASCADE,
+    CONSTRAINT fk_product_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(category_id) ON DELETE CASCADE
+);
+```
+
+**Descripción:**\
+Contiene los productos publicados por los vendedores.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: orders
+
+``` sql
+CREATE TABLE orders(
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    status ENUM('CREATED','PAID','IN_PROGRESS','DELIVERED','CANCELED','REFUNDED') NOT NULL,
+    total_amount INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_order_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES customers(customer_id) ON DELETE CASCADE
+);
+```
+
+**Descripción:**\
+Representa los pedidos realizados por los clientes.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: order_items
+
+``` sql
+CREATE TABLE order_items(
+    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price INT NOT NULL,
+    subtotal INT NOT NULL,
+    CONSTRAINT fk_orderitem_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_orderitem_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(product_id) ON DELETE CASCADE
+);
+```
+
+**Descripción:**\
+Detalle de productos incluidos en cada pedido.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: payments
+
+``` sql
+CREATE TABLE payments(
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    amount INT NOT NULL,
+    payment_method ENUM('CARD','TRANSFER','PAYPAL','CRYPTO') NOT NULL,
+    transaction_reference INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_payment_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(order_id) ON DELETE CASCADE
+);
+```
+
+**Descripción:**\
+Registra pagos y reintentos asociados a un pedido.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: order_status_history
+
+``` sql
+CREATE TABLE order_status_history(
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    from_status VARCHAR(50) NOT NULL,
+    to_status VARCHAR(50) NOT NULL,
+    changed_by VARCHAR(100) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_status_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(order_id) ON DELETE CASCADE
+);
+```
+
+**Descripción:**\
+Historial de cambios de estado del pedido para auditoría.
+
+------------------------------------------------------------------------
+
+## 📌 Tabla: fulfillments
+
+``` sql
+CREATE TABLE fulfillments(
+    fulfillment_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    status ENUM('PENDING','ASSIGNED','DONE','FAILED') NOT NULL,
+    assigned_to VARCHAR(100) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_fulfillment_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(order_id) ON DELETE CASCADE
+);
+```
+
+**Descripción:**\
+Gestiona la parte operativa del procesamiento del pedido.
+
+------------------------------------------------------------------------
+
+# 🔹 3. Reglas de Negocio Implementadas
+
+-   Un **Order** pertenece a un **Customer**.
+-   Un **Order** tiene múltiples **Order Items**.
+-   Un **Product** pertenece a un **Seller** y a una **Category**.
+-   Un **Order** puede tener múltiples **Payments** (reintentos).
+-   Se mantiene historial de estados mediante **order_status_history**.
+-   Se controla la ejecución operativa con **fulfillments**.
+
+------------------------------------------------------------------------
+
+# ✅ Conclusión
+
+El modelo relacional cumple con las reglas del marketplace digital CDO:
+
+✔ Integridad referencial\
+✔ Control de estados\
+✔ Manejo de reintentos de pago\
+✔ Auditoría de cambios\
+✔ Separación clara entre pedido, pago y operación
+
+------------------------------------------------------------------------
