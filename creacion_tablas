@@ -220,3 +220,10 @@ El modelo relacional cumple con las reglas del marketplace digital CDO:
 ✔ Separación clara entre pedido, pago y operación
 
 ------------------------------------------------------------------------
+
+
+si sale prolemas con phone:
+
+poner esto en dbvear:
+
+ALTER TABLE customers MODIFY phone VARCHAR(20) NULL;
