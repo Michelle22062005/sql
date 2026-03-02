@@ -1,0 +1,69 @@
+//importing necessary modules
+const express = require("express");
+const mysql = require("mysql2/promise");
+const { parse } = require("csv-parse");
+const fs = require("fs");
+const multer = require("multer");
+//configuracion for database connection
+const app = express();
+const upload = multer({ dest: "uploads/" });
+
+//conexion a la base de datos
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "root",
+  password: "2206",
+  port: 3308,
+  database: "gata",
+});
+//para correr la base de datos
+app.listen(3000, () => {
+  console.log("Server is running on port http://localhost:3000");
+});
+
+//-----------------------------------------------Tabla Cliente---------------------------------------------
+
+/*  crear tabla si no existe------------aqui lo que estamos haciendo es hacienod una query a travez de la conexion de la base de datos que se hizp con la constante pool */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100)
+  )
+`);
+
+//  endpoint_cliente
+/*+
+
+ */
+/* req: es lo que el programdor hacer(el proceso)
+    res: es lo que los usuarios va a recibir (ver)
+*/
+app.post("/upload/api/categories/", upload.single("categories"), (req, res) => {
+  //es un array que se va a llenar con los datos que se van a insertar en la base de datos, esto se hace para poder hacer una sola query y no tener que hacer una por cada fila que se quiera insertar
+  const rows = [];
+  //Esta seccion es una peticion que se envia a travez de postman para que la query que se esta haciendo se puede crear la bases de datos
+  fs.createReadStream(req.file.path)
+    .pipe(parse({ columns: true, trim: true }))
+    /*.on("data", (row) => rows.push(row)) */
+    .on("data", (row) => {
+      console.log(row);
+      rows.push(row);
+    })
+    .on("end", async () => {
+      try {
+        if (rows.length) {
+          const values = rows.map((r) => `('${r.name}')`).join(",");
+          console.log(values);
+          await pool.query(`INSERT INTO categories (name) VALUES ${values}`);
+        }
+
+        res.json({ ok: true, total: rows.length });
+      } catch (er) {
+        res.status(500).json({ error: `Error insertando datos, ${er}` });
+      }
+    });
+});
+//-----------------------------------------------Fin de la tabla cliente--------------------------------------------
+
+
+//--
