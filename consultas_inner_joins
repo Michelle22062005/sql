@@ -1,0 +1,245 @@
+Aquí tienes el documento en **formato Markdown listo para copiar y pegar** 👇
+
+---
+
+# 📦 Crudzaso Delivery Ops (CDO)
+
+## 📊 Consultas SQL con JOIN y Consultas Avanzadas
+
+---
+
+# 🔹 1️⃣ INNER JOIN
+
+## 📌 1. Pedidos con nombre del cliente
+
+```sql
+SELECT 
+    o.order_id,
+    c.full_name AS customer,
+    o.status,
+    o.total_amount,
+    o.created_at
+FROM orders o
+INNER JOIN customers c 
+    ON o.customer_id = c.customer_id;
+```
+
+**Descripción:**
+Muestra todos los pedidos junto con el nombre del cliente que los realizó.
+
+---
+
+## 📌 2. Detalle completo de un pedido
+
+```sql
+SELECT 
+    o.order_id,
+    p.name AS product,
+    oi.quantity,
+    oi.unit_price,
+    oi.subtotal
+FROM orders o
+INNER JOIN order_items oi 
+    ON o.order_id = oi.order_id
+INNER JOIN products p 
+    ON oi.product_id = p.product_id
+WHERE o.order_id = 1;
+```
+
+**Descripción:**
+Muestra los productos incluidos en un pedido específico.
+
+---
+
+## 📌 3. Productos con vendedor y categoría
+
+```sql
+SELECT 
+    p.name AS product,
+    s.full_name AS seller,
+    c.name AS category,
+    p.price,
+    p.is_active
+FROM products p
+INNER JOIN sellers s 
+    ON p.seller_id = s.seller_id
+INNER JOIN categories c 
+    ON p.category_id = c.category_id;
+```
+
+**Descripción:**
+Lista cada producto junto con su vendedor y categoría.
+
+---
+
+# 🔹 2️⃣ LEFT JOIN
+
+## 📌 4. Clientes aunque no tengan pedidos
+
+```sql
+SELECT 
+    c.full_name,
+    o.order_id,
+    o.status
+FROM customers c
+LEFT JOIN orders o 
+    ON c.customer_id = o.customer_id;
+```
+
+**Descripción:**
+Muestra todos los clientes, incluso si no han realizado pedidos.
+
+---
+
+# 🔹 3️⃣ GROUP BY y Agregaciones
+
+## 📌 5. Total gastado por cliente
+
+```sql
+SELECT 
+    c.full_name,
+    SUM(o.total_amount) AS total_spent
+FROM customers c
+INNER JOIN orders o 
+    ON c.customer_id = o.customer_id
+GROUP BY c.customer_id;
+```
+
+**Descripción:**
+Calcula cuánto ha gastado cada cliente.
+
+---
+
+## 📌 6. Total vendido por vendedor
+
+```sql
+SELECT 
+    s.full_name AS seller,
+    SUM(oi.subtotal) AS total_sales
+FROM sellers s
+INNER JOIN products p 
+    ON s.seller_id = p.seller_id
+INNER JOIN order_items oi 
+    ON p.product_id = oi.product_id
+GROUP BY s.seller_id;
+```
+
+**Descripción:**
+Calcula las ventas totales generadas por cada vendedor.
+
+---
+
+# 🔹 4️⃣ Subconsultas
+
+## 📌 7. Pedidos con más de un producto
+
+```sql
+SELECT order_id
+FROM order_items
+GROUP BY order_id
+HAVING COUNT(product_id) > 1;
+```
+
+**Descripción:**
+Obtiene pedidos que contienen más de un producto.
+
+---
+
+## 📌 8. Cliente que más ha gastado
+
+```sql
+SELECT full_name
+FROM customers
+WHERE customer_id = (
+    SELECT customer_id
+    FROM orders
+    GROUP BY customer_id
+    ORDER BY SUM(total_amount) DESC
+    LIMIT 1
+);
+```
+
+**Descripción:**
+Devuelve el cliente con mayor gasto acumulado.
+
+---
+
+# 🔹 5️⃣ JOIN Múltiple (Consulta Completa)
+
+## 📌 9. Pedido con cliente, productos y pagos
+
+```sql
+SELECT 
+    o.order_id,
+    c.full_name AS customer,
+    p.name AS product,
+    oi.quantity,
+    pay.payment_method,
+    pay.amount
+FROM orders o
+INNER JOIN customers c 
+    ON o.customer_id = c.customer_id
+INNER JOIN order_items oi 
+    ON o.order_id = oi.order_id
+INNER JOIN products p 
+    ON oi.product_id = p.product_id
+LEFT JOIN payments pay 
+    ON o.order_id = pay.order_id
+WHERE o.order_id = 1;
+```
+
+**Descripción:**
+Consulta avanzada que muestra toda la información relacionada con un pedido.
+
+---
+
+# 🔹 6️⃣ Historial de Estados
+
+## 📌 10. Historial de cambios de un pedido
+
+```sql
+SELECT 
+    o.order_id,
+    h.from_status,
+    h.to_status,
+    h.changed_by,
+    h.created_at
+FROM orders o
+INNER JOIN order_status_history h
+    ON o.order_id = h.order_id
+WHERE o.order_id = 1
+ORDER BY h.created_at;
+```
+
+**Descripción:**
+Muestra la trazabilidad completa de cambios de estado de un pedido.
+
+---
+
+# 🔹 7️⃣ Reglas de Negocio
+
+## 📌 11. Pedidos sin pagos
+
+```sql
+SELECT o.order_id
+FROM orders o
+LEFT JOIN payments p 
+    ON o.order_id = p.order_id
+WHERE p.payment_id IS NULL;
+```
+
+---
+
+## 📌 12. Pedidos con múltiples pagos (reintentos)
+
+```sql
+SELECT 
+    order_id,
+    COUNT(payment_id) AS total_attempts
+FROM payments
+GROUP BY order_id
+HAVING COUNT(payment_id) > 1;
+```
+
+---
+
