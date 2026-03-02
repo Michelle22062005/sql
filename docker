@@ -1,0 +1,7 @@
+-1) Para ver los motores o base de datos ejecutadas: (docker ps)
+-2) Para ver los motores o base de datos no ejecutadas pero guardadas es: (docker ps -a)
+-3) Para detener el motor o la base de datos es:(docker stop 'ID o Name = de la base de datos')
+-4) Para correr el motor o la base de datos es: (docker start 'ID o Name = de la base de datos')
+clear
+
+  docker hub (google)
